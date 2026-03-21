@@ -17,6 +17,14 @@ public class UserService {
         this.passwordEncoder = passwordEncoder;
     }
 
+    public User loginUser(String email,String rawPassword){
+
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found with this"));
+
+        return user;
+    }
+
     public User registerUser(User user) {
         // 🔥 Scramble the password right before saving
         String encodedPassword = passwordEncoder.encode(user.getPassword());
