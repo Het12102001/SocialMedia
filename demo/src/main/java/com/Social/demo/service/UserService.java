@@ -26,7 +26,7 @@ public class UserService {
     }
 
     public User registerUser(User user) {
-        // 🔥 Scramble the password right before saving
+        // Scramble the password right before saving
         String encodedPassword = passwordEncoder.encode(user.getPassword());
         user.setPassword(encodedPassword);
 

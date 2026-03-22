@@ -38,6 +38,7 @@ public class User {
 
     private String bio;
 
+    @JsonIgnore
     @OneToMany(mappedBy = "user",cascade = CascadeType.ALL)
     private List<Post> posts;
 
