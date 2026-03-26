@@ -26,7 +26,7 @@ public class PostController {
     @GetMapping
     public ResponseEntity<Page<Post>> getAllPosts(
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size
+            @RequestParam(defaultValue = "5") int size
     ) {
         Page<Post> posts = postService.getAllPosts(page, size);
         return ResponseEntity.ok(posts);
@@ -37,4 +37,6 @@ public class PostController {
         String responseMessage = postService.toggleLike(postId);
         return ResponseEntity.ok(responseMessage);
     }
+
+
 }
