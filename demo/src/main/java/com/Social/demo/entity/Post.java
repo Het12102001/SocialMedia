@@ -6,6 +6,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @AllArgsConstructor
 @NoArgsConstructor
@@ -25,4 +26,8 @@ public class Post {
     @ManyToOne
     @JoinColumn(name = "user_id")
     private User user;
+
+    // If a post is deleted, delete all likes attached to it
+    @OneToMany(mappedBy = "post", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<PostLike> likes;
 }

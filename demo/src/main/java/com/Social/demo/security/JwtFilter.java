@@ -5,20 +5,24 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
-import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 @Component
 public class JwtFilter extends OncePerRequestFilter {
 
     private final JwtUtil jwtUtil;
+    private final RateLimitingFilter rateLimitingFilter;
 
-    public JwtFilter(JwtUtil jwtUtil) {
+    public JwtFilter(JwtUtil jwtUtil,RateLimitingFilter rateLimitingFilter) {
         this.jwtUtil = jwtUtil;
+        this.rateLimitingFilter = rateLimitingFilter;
     }
 
     @Override
@@ -31,19 +35,26 @@ public class JwtFilter extends OncePerRequestFilter {
             String token = authHeader.substring(7); // Remove "Bearer " to get the pure token
 
             try {
-                // 3. Extract the email (This will fail if the token is faked or expired)
+                // 3. Extract the email AND role (This will fail if the token is faked or expired)
                 String email = jwtUtil.extractEmail(token);
+                String role = jwtUtil.extractRole(token); // 🔥 FIX 1: Extract the role!
 
                 // 4. If valid, tell Spring Security "This user is authenticated!"
                 if (email != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+
+                    // 🔥 Convert the String role into a Spring Security Authority
+                    List<SimpleGrantedAuthority> authorities = Collections.singletonList(new SimpleGrantedAuthority(role));
+
+                    // 🔥 FIX 2: Pass the 'authorities' list into the token, NOT new ArrayList<>()
                     UsernamePasswordAuthenticationToken authToken =
-                            new UsernamePasswordAuthenticationToken(email, null, new ArrayList<>());
+                            new UsernamePasswordAuthenticationToken(email, null, authorities);
 
                     SecurityContextHolder.getContext().setAuthentication(authToken);
                 }
             } catch (Exception e) {
                 // Token is invalid, expired, or tampered with
-                System.out.println("Invalid JWT Token detected!");
+                System.out.println("JWT ERROR: " + e.getMessage());
+                e.printStackTrace(); // Keeps our debugging printout from earlier!
             }
         }
 

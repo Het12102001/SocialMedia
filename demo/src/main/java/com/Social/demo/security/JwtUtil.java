@@ -1,5 +1,6 @@
 package com.Social.demo.security;
 
+import io.jsonwebtoken.Claims; // 🔥 Added this import
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
@@ -23,8 +24,9 @@ public class JwtUtil {
     }
 
     // 1. Generate the token when the user logs in
-    public String generateToken(String email) {
+    public String generateToken(String email, String role) {
         return Jwts.builder()
+                .claim("role", role) // 🔥 Storing the role
                 .setSubject(email)
                 .setIssuedAt(new Date())
                 .setExpiration(new Date(System.currentTimeMillis() + EXPIRATION_TIME))
@@ -40,5 +42,15 @@ public class JwtUtil {
                 .parseClaimsJws(token)
                 .getBody()
                 .getSubject();
+    }
+
+    // 🔥 Added Step 2: Read the role from the token
+    public String extractRole(String token) {
+        Claims claims = Jwts.parserBuilder()
+                .setSigningKey(getSigningKey())
+                .build()
+                .parseClaimsJws(token)
+                .getBody();
+        return claims.get("role", String.class);
     }
 }
