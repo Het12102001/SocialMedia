@@ -1,0 +1,27 @@
+version: '3.8'
+
+services:
+  # 🐘 The Database (Postgres)
+  db:
+    image: postgres:15
+    container_name: social-media-db
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: Het@1210          # <--- Password updated
+      POSTGRES_DB: social_media         # <--- FIXED: Now matches your Spring Boot URL
+    ports:
+      - "5433:5432"
+
+  # ☕ Your Spring Boot App
+  app:
+    build: .
+    container_name: social-media-app
+    ports:
+      - "8080:8080"
+    depends_on:
+      - db
+    restart: on-failure                 # <--- ADDED: Fixes the crash you just saw!
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/social_media
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: Het@1210 # <--- Password updated
