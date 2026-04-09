@@ -12,11 +12,11 @@ import java.util.List;
 
 public interface PostRepository extends JpaRepository<Post, Long> {
 
-    // Feature 3: The Timeline Feed (Keep this here)
+    // Feature 3: The Timeline Feed.
     @Query("SELECT p FROM Post p JOIN Follow f ON p.user = f.following WHERE f.follower = :currentUser ORDER BY p.createdAt DESC")
     Page<Post> findPersonalizedFeed(@Param("currentUser") User currentUser, Pageable pageable);
 
-    // 🔥 Feature 4: The Trending Hashtag Algorithm (Native SQL)
+    //  Feature 4: The Trending Hashtag Algorithm (Native SQL)
     @Query(value = "SELECT word FROM (" +
             "  SELECT regexp_split_to_table(content, '\\s+') as word " +
             "  FROM posts " +
