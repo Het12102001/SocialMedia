@@ -34,7 +34,7 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
                         // UPGRADED: Added forgot/reset password to permitAll
-                        .requestMatchers("/api/users/signup", "/api/users/login", "/api/users/forgot-password", "/api/users/reset-password","/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
+                        .requestMatchers("/uploads/**","/api/users/signup", "/api/users/login", "/api/users/forgot-password", "/api/users/reset-password","/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
 
                         // RESTORED: Keep your God Mode locked down!
                         .requestMatchers("/api/admin/**").hasAuthority("ROLE_ADMIN")

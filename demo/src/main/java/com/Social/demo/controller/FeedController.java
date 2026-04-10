@@ -16,13 +16,13 @@ public class FeedController {
         this.feedService = feedService;
     }
 
-    // GET /api/feed?page=0&size=10
-    @GetMapping
-    public ResponseEntity<Page<Post>> getMyFeed(
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size) {
-
-        Page<Post> feed = feedService.getPersonalizedFeed(page, size);
-        return ResponseEntity.ok(feed);
-    }
+//    // GET /api/feed?page=0&size=10
+//    @GetMapping
+//    public ResponseEntity<Page<Post>> getMyFeed(
+//            @RequestParam(defaultValue = "0") int page,
+//            @RequestParam(defaultValue = "10") int size) {
+//
+//        Page<Post> feed = feedService.getPersonalizedFeed(page, size);
+//        return ResponseEntity.ok(feed);
+//    }
 }

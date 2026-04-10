@@ -1,22 +1,21 @@
 package com.Social.demo.service;
 
-import com.Social.demo.dto.PostRequest;
 import com.Social.demo.entity.Post;
 import com.Social.demo.entity.User;
+import com.Social.demo.entity.PostLike;
 import com.Social.demo.repository.PostLikeRepository;
 import com.Social.demo.repository.PostRepository;
 import com.Social.demo.repository.UserRepository;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
+import org.springframework.data.domain.*;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
-import com.Social.demo.entity.PostLike;
-import java.util.Optional;
+import org.springframework.web.multipart.MultipartFile;
 
-
+import java.io.IOException;
+import java.nio.file.*;
 import java.time.LocalDateTime;
+import java.util.UUID;
+import java.util.Optional;
 
 @Service
 public class PostService {
@@ -24,67 +23,81 @@ public class PostService {
     private final PostRepository postRepository;
     private final UserRepository userRepository;
     private final PostLikeRepository postLikeRepository;
+    private final String uploadDir = "uploads/";
 
-    public PostService(PostRepository postRepository, UserRepository userRepository,PostLikeRepository postLikeRepository) {
+    public PostService(PostRepository postRepository, UserRepository userRepository, PostLikeRepository postLikeRepository) {
         this.postRepository = postRepository;
         this.userRepository = userRepository;
         this.postLikeRepository = postLikeRepository;
     }
 
-    public Post createPost(PostRequest request) {
-        // 1. Get the email of the currently logged-in user from the JWT Security Context
-        String loggedInEmail = SecurityContextHolder.getContext().getAuthentication().getName();
+    public Post createPostWithFile(String content, MultipartFile file) throws IOException {
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        User user = userRepository.findByEmail(email).orElseThrow(() -> new RuntimeException("User not found"));
 
-        // 2. Find that user in the database
-        User user = userRepository.findByEmail(loggedInEmail)
-                .orElseThrow(() -> new RuntimeException("User not found"));
-
-        // 3. Create the new Post and attach the User to it
         Post post = new Post();
-        post.setContent(request.getContent());
-        post.setImageUrl(request.getImageUrl());
+        post.setContent(content);
+        post.setUser(user);
         post.setCreatedAt(LocalDateTime.now());
-        post.setUser(user); // This creates the database relationship!
 
-        // 4. Save to database
+        if (file != null && !file.isEmpty()) {
+            Path uploadPath = Paths.get(uploadDir);
+            if (!Files.exists(uploadPath)) Files.createDirectories(uploadPath);
+
+            String fileName = UUID.randomUUID().toString() + "_" + file.getOriginalFilename();
+            Files.copy(file.getInputStream(), uploadPath.resolve(fileName));
+            post.setImageUrl(fileName);
+        }
+
         return postRepository.save(post);
     }
-
-
-
-    public Page<Post> getAllPosts(int pageNumber, int pageSize) {
-        // Create a pagination request. We also tell it to sort by "createdAt" in DESCENDING order (newest first)
-        Pageable pageable = PageRequest.of(pageNumber, pageSize, Sort.by("createdAt").descending());
-
-        // JpaRepository has a built-in method for this!
-        return postRepository.findAll(pageable);
+    public Page<Post> getAllPosts(int page, int size) {
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        User currentUser = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        Pageable pageable = PageRequest.of(page, size);
+        return postRepository.findPersonalizedFeed(currentUser, pageable);
     }
 
+//    public Page<Post> getAllPosts(int page, int size) {
+//        // 1. Identify User
+//        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+//        System.out.println("DEBUG: Fetching feed for user: " + email);
+//
+//        User currentUser = userRepository.findByEmail(email)
+//                .orElseThrow(() -> new RuntimeException("User not found: " + email));
+//
+//        // 2. Setup Pagination
+//        Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
+//
+//        // 3. Execute Personalized Query
+//        Page<Post> result = postRepository.findPersonalizedFeed(currentUser, pageable);
+//
+//        System.out.println("DEBUG: Found " + result.getTotalElements() + " posts for this feed.");
+//
+//        return result;
+//    }
+//public Page<Post> getAllPosts(int pageNumber, int pageSize) {
+//    // 1. Set up pagination
+//    Pageable pageable = PageRequest.of(pageNumber, pageSize, Sort.by("createdAt").descending());
+//
+//    // 2. IGNORING WHO IS LOGGED IN FOR A SECOND
+//    // Just fetch EVERY single post in the database.
+//    return postRepository.findAll(pageable);
+//}
+
     public String toggleLike(Long postId) {
-        // 1. Get logged-in user
-        String loggedInEmail = SecurityContextHolder.getContext().getAuthentication().getName();
-        User user = userRepository.findByEmail(loggedInEmail)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        User user = userRepository.findByEmail(email).orElseThrow(() -> new RuntimeException("User not found"));
+        Post post = postRepository.findById(postId).orElseThrow(() -> new RuntimeException("Post not found"));
 
-        // 2. Find the post
-        Post post = postRepository.findById(postId)
-                .orElseThrow(() -> new RuntimeException("Post not found"));
-
-        // 3. Check if the like already exists
         Optional<PostLike> existingLike = postLikeRepository.findByPostAndUser(post, user);
-
         if (existingLike.isPresent()) {
-            // If they already liked it, remove the like (Unlike)
             postLikeRepository.delete(existingLike.get());
-            return "Post unliked successfully";
+            return "Unliked";
         } else {
-            // If they haven't liked it, create a new like
-            PostLike newLike = new PostLike();
-            newLike.setPost(post);
-            newLike.setUser(user);
-            newLike.setCreatedAt(LocalDateTime.now());
-            postLikeRepository.save(newLike);
-            return "Post liked successfully";
+            postLikeRepository.save(new PostLike(null, LocalDateTime.now(), user, post));
+            return "Liked";
         }
     }
 }

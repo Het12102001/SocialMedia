@@ -11,6 +11,9 @@ services:
       POSTGRES_DB: social_media
     ports:
       - "5433:5432"
+    volumes:
+      # 🚀 THE DB FIX: This saves your database data permanently so it survives a 'down' command!
+      - postgres_data:/var/lib/postgresql/data
 
   # ☕ The Spring Boot App
   app:
@@ -20,8 +23,15 @@ services:
       - "8080:8080"
     depends_on:
       - db
-    restart: on-failure  # <-- This prevents the crash we saw earlier!
+    restart: on-failure
     environment:
       SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/social_media
       SPRING_DATASOURCE_USERNAME: postgres
       SPRING_DATASOURCE_PASSWORD: Het@1210
+    volumes:
+      # 🚀 THE IMAGE FIX: This saves your uploaded images to your Windows folder
+      - ./uploads:/app/uploads
+
+# We have to declare the named volume at the bottom
+volumes:
+  postgres_data:

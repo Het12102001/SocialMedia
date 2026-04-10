@@ -7,6 +7,7 @@ import com.Social.demo.repository.UserRepository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
@@ -21,17 +22,14 @@ public class FeedService {
         this.userRepository = userRepository;
     }
 
-    public Page<Post> getPersonalizedFeed(int page, int size) {
-        // 1. Get the email of the logged-in user from the JWT
-        String email = SecurityContextHolder.getContext().getAuthentication().getName();
-
-        User currentUser = userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("User not found"));
-
-        // 2. Create a "Pageable" object (e.g., Page 0, Size 10)
-        Pageable pageable = PageRequest.of(page, size);
-
-        // 3. Return the filtered posts
-        return postRepository.findPersonalizedFeed(currentUser, pageable);
-    }
+//    public Page<Post> getAllPosts(int pageNumber, int pageSize) {
+//        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+//        User currentUser = userRepository.findByEmail(email)
+//                .orElseThrow(() -> new RuntimeException("User not found"));
+//
+//        Pageable pageable = PageRequest.of(pageNumber, pageSize, Sort.by("createdAt").descending());
+//
+//
+//        return postRepository.findPersonalizedFeed(currentUser.getId(), pageable);
+//    }
 }

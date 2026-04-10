@@ -30,4 +30,8 @@ public class Post {
     // If a post is deleted, delete all likes attached to it
     @OneToMany(mappedBy = "post", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<PostLike> likes;
+
+    // Tell the database to delete comments when the post is deleted!
+    @OneToMany(mappedBy = "post", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Comment> comments;
 }
