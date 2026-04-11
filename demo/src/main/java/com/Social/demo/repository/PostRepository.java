@@ -12,6 +12,9 @@ import java.util.List;
 
 public interface PostRepository extends JpaRepository<Post, Long> {
 
+
+    List<Post> findByContentContainingIgnoreCaseOrderByCreatedAtDesc(String content);
+    Page<Post> findAllByOrderByCreatedAtDesc(Pageable pageable);
     Page<Post> findByUserOrderByCreatedAtDesc(User user, Pageable pageable);
 
     @Query("SELECT p FROM Post p WHERE p.user = :user " +

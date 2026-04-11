@@ -25,28 +25,41 @@ public class UserService {
         this.followRepository = followRepository;
     }
 
-    // 🚀 NEW: Deep Delete Account Logic
+    // 🚀 NEW ADMIN FEATURE: Count all users
+    public long countAllUsers() {
+        return userRepository.count();
+    }
+
+    // 🚀 NEW ADMIN FEATURE: Delete ANY user by ID (with full file cleanup)
+    @Transactional
+    public void adminDeleteUser(Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        performFullCleanup(user);
+    }
+
+    // Existing self-delete logic
     @Transactional
     public void deleteUserPermanently() {
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("User not found"));
+        performFullCleanup(user);
+    }
 
-        // 1. Delete physical profile image
-        if (user.getProfileImageUrl() != null) {
-            deletePhysicalFile(user.getProfileImageUrl());
-        }
+    // Private helper to handle the file & DB wipe
+    private void performFullCleanup(User user) {
+        // 1. Cleanup Profile Image
+        if (user.getProfileImageUrl() != null) deletePhysicalFile(user.getProfileImageUrl());
 
-        // 2. Delete physical post images
+        // 2. Cleanup all Post Images
         if (user.getPosts() != null) {
             user.getPosts().forEach(post -> {
-                if (post.getImageUrl() != null) {
-                    deletePhysicalFile(post.getImageUrl());
-                }
+                if (post.getImageUrl() != null) deletePhysicalFile(post.getImageUrl());
             });
         }
 
-        // 3. Delete from DB (Cascade handles posts, comments, likes, follows)
+        // 3. Delete from DB (Cascades handle Comments/Likes/Follows)
         userRepository.delete(user);
     }
 
@@ -59,15 +72,9 @@ public class UserService {
         }
     }
 
-    // ... Keep your existing loginUser, registerUser, getUserProfileData, etc. exactly as they were
-    public User loginUser(String email, String rawPassword) {
-        return userRepository.findByEmail(email).orElseThrow(() -> new RuntimeException("User not found"));
-    }
-
-    public User registerUser(User user) {
-        user.setPassword(passwordEncoder.encode(user.getPassword()));
-        return userRepository.save(user);
-    }
+    // ... [Rest of your existing login/register/profile methods remain here] ...
+    public User loginUser(String email, String rawPassword) { return userRepository.findByEmail(email).orElseThrow(); }
+    public User registerUser(User user) { user.setPassword(passwordEncoder.encode(user.getPassword())); return userRepository.save(user); }
 
     @Transactional
     public Map<String, Object> getUserProfileData(String username) {

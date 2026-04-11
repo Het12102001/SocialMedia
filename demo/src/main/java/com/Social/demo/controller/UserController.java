@@ -157,7 +157,7 @@ public class UserController {
         return ResponseEntity.ok(userService.getUserProfileData(username));
     }
 
-    // 🚀 UPDATE: Add the image URL here so your Feed Navbar can use it later!
+    // Add the image URL here so your Feed Navbar can use it later!
     @GetMapping("/me/details")
     public ResponseEntity<?> getCurrentUserDetails() {
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
@@ -169,11 +169,12 @@ public class UserController {
         userData.put("username", user.getUsername());
         userData.put("email", user.getEmail());
         userData.put("profileImageUrl", user.getProfileImageUrl());
+        userData.put("role", user.getRole());
 
         return ResponseEntity.ok(userData);
     }
 
-    // 🚀 NEW: Endpoint to accept the Edit Profile form
+    //  Endpoint to accept the Edit Profile form
     @PutMapping(value = "/profile/edit", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<String> updateMyProfile(
             @RequestParam(value = "bio", required = false) String bio,

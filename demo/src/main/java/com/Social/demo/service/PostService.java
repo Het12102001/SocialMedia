@@ -6,6 +6,7 @@ import com.Social.demo.entity.PostLike;
 import com.Social.demo.repository.PostLikeRepository;
 import com.Social.demo.repository.PostRepository;
 import com.Social.demo.repository.UserRepository;
+import jakarta.transaction.Transactional;
 import org.springframework.data.domain.*;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -29,6 +30,22 @@ public class PostService {
         this.postRepository = postRepository;
         this.userRepository = userRepository;
         this.postLikeRepository = postLikeRepository;
+    }
+
+    // 🚀 THE FIX: Handles File deletion + DB deletion
+    @Transactional
+    public void deletePost(Long postId) {
+        Post post = postRepository.findById(postId)
+                .orElseThrow(() -> new RuntimeException("Post not found"));
+
+        if (post.getImageUrl() != null) {
+            try {
+                Files.deleteIfExists(Paths.get("uploads/" + post.getImageUrl()));
+            } catch (IOException e) {
+                System.err.println("Could not delete file: " + post.getImageUrl());
+            }
+        }
+        postRepository.delete(post);
     }
 
     public Post createPostWithFile(String content, MultipartFile file) throws IOException {
@@ -58,6 +75,9 @@ public class PostService {
         Pageable pageable = PageRequest.of(page, size);
         return postRepository.findPersonalizedFeed(currentUser, pageable);
     }
+
+
+
 
 //    public Page<Post> getAllPosts(int page, int size) {
 //        // 1. Identify User
@@ -118,6 +138,10 @@ public class PostService {
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
         org.springframework.data.domain.Pageable pageable = org.springframework.data.domain.PageRequest.of(page, size);
+
+        if ("ROLE_ADMIN".equals(currentUser.getRole())) {
+            return postRepository.findAllByOrderByCreatedAtDesc(pageable);
+        }
 
         // This uses the custom SQL @Query we wrote in the PostRepository earlier!
         return postRepository.findPersonalizedFeed(currentUser, pageable);

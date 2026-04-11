@@ -67,7 +67,6 @@ public class PostController {
         Post post = postRepository.findById(postId)
                 .orElseThrow(() -> new RuntimeException("Post not found"));
 
-        // 🚀 FIX: Check both Email and Username just in case!
         boolean isOwner = post.getUser().getEmail().equalsIgnoreCase(loggedInIdentity) ||
                 post.getUser().getUsername().equalsIgnoreCase(loggedInIdentity);
 
@@ -76,12 +75,8 @@ public class PostController {
                     .body("Security Alert: You can only delete your own posts.");
         }
 
-        // Delete the children manually first!
-        commentRepository.deleteByPost(post);
-        postLikeRepository.deleteByPost(post);
-
-        // Now the post has zero dependencies, so the database will allow this:
-        postRepository.delete(post);
+        // 🚀 THE FIX: Let the Service handle the Deep Delete (Files + DB + Cascades)
+        postService.deletePost(postId);
 
         return ResponseEntity.ok("Post deleted successfully.");
     }
