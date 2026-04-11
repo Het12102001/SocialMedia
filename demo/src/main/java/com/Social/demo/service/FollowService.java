@@ -36,7 +36,7 @@ public class FollowService {
         }
 
         // 4. Check if the follow relationship already exists
-        Optional<Follow> existingFollow = followRepository.findByFollowerAndFollowing(follower, targetUser);
+        Optional<Follow> existingFollow = followRepository.findByFollowerIdAndFollowingId(follower.getId(), targetUser.getId());
 
         if (existingFollow.isPresent()) {
             // Unfollow

@@ -44,13 +44,11 @@ public class PostController {
 
     // 2. GET ALL POSTS
     @GetMapping
-    public ResponseEntity<Page<Post>> getAllPosts(
+    public ResponseEntity<Page<Post>> getFeed(
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size
-    ) {
-        return ResponseEntity.ok(postService.getAllPosts(page, size));
+            @RequestParam(defaultValue = "10") int size) {
+        return ResponseEntity.ok(postService.getPersonalizedFeed(page, size));
     }
-
     // 3. TOGGLE LIKE
     @PostMapping("/{postId}/like")
     public ResponseEntity<String> toggleLike(@PathVariable("postId") Long postId) {
@@ -86,6 +84,15 @@ public class PostController {
         postRepository.delete(post);
 
         return ResponseEntity.ok("Post deleted successfully.");
+    }
+    //React will call this to get the Profile Grid posts
+    @GetMapping("/user/{username}")
+    public ResponseEntity<Page<Post>> getUserPosts(
+            @PathVariable("username") String username,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size
+    ) {
+        return ResponseEntity.ok(postService.getUserProfilePosts(username, page, size));
     }
 
 

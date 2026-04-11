@@ -12,6 +12,7 @@ import java.util.List;
 
 public interface PostRepository extends JpaRepository<Post, Long> {
 
+    Page<Post> findByUserOrderByCreatedAtDesc(User user, Pageable pageable);
 
     @Query("SELECT p FROM Post p WHERE p.user = :user " +
             "OR p.user IN (SELECT f.following FROM Follow f WHERE f.follower = :user) " +
@@ -29,6 +30,11 @@ public interface PostRepository extends JpaRepository<Post, Long> {
             "LIMIT 5",
             nativeQuery = true)
     List<String> findTrendingHashtags();
+
+    @Query("SELECT p FROM Post p WHERE LOWER(p.content) LIKE LOWER(CONCAT('%', :keyword, '%')) " +
+            "AND (p.user = :currentUser OR p.user IN (SELECT f.following FROM Follow f WHERE f.follower = :currentUser)) " +
+            "ORDER BY p.createdAt DESC")
+    List<Post> findPersonalizedPostsByHashtag(@Param("keyword") String keyword, @Param("currentUser") User currentUser);
 
 
 }

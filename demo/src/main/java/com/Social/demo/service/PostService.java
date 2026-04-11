@@ -100,4 +100,26 @@ public class PostService {
             return "Liked";
         }
     }
+
+    // Add this inside PostService class:
+
+    public Page<Post> getUserProfilePosts(String username, int page, int size) {
+        User profileUser = userRepository.findByUsernameIgnoreCase(username)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        Pageable pageable = PageRequest.of(page, size);
+        return postRepository.findByUserOrderByCreatedAtDesc(profileUser, pageable);
+    }
+
+    @org.springframework.transaction.annotation.Transactional(readOnly = true)
+    public org.springframework.data.domain.Page<Post> getPersonalizedFeed(int page, int size) {
+        String email = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication().getName();
+        User currentUser = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        org.springframework.data.domain.Pageable pageable = org.springframework.data.domain.PageRequest.of(page, size);
+
+        // This uses the custom SQL @Query we wrote in the PostRepository earlier!
+        return postRepository.findPersonalizedFeed(currentUser, pageable);
+    }
 }

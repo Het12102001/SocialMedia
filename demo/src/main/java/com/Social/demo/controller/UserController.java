@@ -17,7 +17,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
-
+import org.springframework.web.multipart.MultipartFile;
+import org.springframework.http.MediaType;
+import java.io.IOException;
 import java.util.UUID;
 
 @RestController
@@ -91,19 +93,6 @@ public class UserController {
         return ResponseEntity.ok(result);
     }
 
-    // 5. DELETE MY PROFILE
-    @DeleteMapping("/me")
-    public ResponseEntity<String> deleteMyProfile() {
-        String loggedInEmail = SecurityContextHolder.getContext().getAuthentication().getName();
-        logger.info("User {} is requesting account deletion.", loggedInEmail);
-
-        User user = userRepository.findByEmail(loggedInEmail)
-                .orElseThrow(() -> new RuntimeException("User not found"));
-
-        userRepository.delete(user);
-        logger.info("User {} successfully deleted.", loggedInEmail);
-        return ResponseEntity.ok("Your profile and all your data have been permanently deleted.");
-    }
 
     // 6. FORGOT PASSWORD (Request Reset)
     @PostMapping("/forgot-password")
@@ -160,5 +149,63 @@ public class UserController {
         logger.info("Password successfully reset for user: {}", user.getEmail());
 
         return ResponseEntity.ok("Password has been successfully reset. You can now log in.");
+    }
+
+    // React will call this to get the Profile Header info
+    @GetMapping("/username/{username}")
+    public ResponseEntity<?> getProfileByUsername(@PathVariable("username") String username) {
+        return ResponseEntity.ok(userService.getUserProfileData(username));
+    }
+
+    // 🚀 UPDATE: Add the image URL here so your Feed Navbar can use it later!
+    @GetMapping("/me/details")
+    public ResponseEntity<?> getCurrentUserDetails() {
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        java.util.Map<String, Object> userData = new java.util.HashMap<>();
+        userData.put("id", user.getId());
+        userData.put("username", user.getUsername());
+        userData.put("email", user.getEmail());
+        userData.put("profileImageUrl", user.getProfileImageUrl());
+
+        return ResponseEntity.ok(userData);
+    }
+
+    // 🚀 NEW: Endpoint to accept the Edit Profile form
+    @PutMapping(value = "/profile/edit", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<String> updateMyProfile(
+            @RequestParam(value = "bio", required = false) String bio,
+            @RequestParam(value = "file", required = false) MultipartFile file) {
+
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        try {
+            userService.updateProfile(email, bio, file);
+            return ResponseEntity.ok("Profile updated successfully!");
+        } catch (IOException e) {
+            logger.error("Failed to upload profile picture", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Image upload failed");
+        }
+    }
+
+
+    @GetMapping("/{username}/followers")
+    public ResponseEntity<?> getFollowers(@PathVariable("username") String username) {
+        return ResponseEntity.ok(userService.getUserFollowers(username));
+    }
+
+
+    @GetMapping("/{username}/following")
+    public ResponseEntity<?> getFollowing(@PathVariable("username") String username) {
+        return ResponseEntity.ok(userService.getUserFollowing(username));
+    }
+
+
+    @DeleteMapping("/me")
+    public ResponseEntity<String> deleteMyProfile() {
+        logger.info("Deep deletion request received.");
+        userService.deleteUserPermanently();
+        return ResponseEntity.ok("Your account and all associated files/data have been permanently purged.");
     }
 }
