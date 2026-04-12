@@ -34,7 +34,7 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
                         // 🚀 UPGRADED: Added "/ws/**" so WebSockets can connect without getting blocked!
-                        .requestMatchers("/uploads/**","/api/users/signup", "/api/users/login", "/api/users/forgot-password", "/api/users/reset-password","/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html", "/ws/**").permitAll()
+                        .requestMatchers("/uploads/**","/api/users/signup", "/api/users/login", "/api/users/forgot-password", "/api/users/reset-password","/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html", "/ws/**","/api/discovery/trending").permitAll()
 
                         // RESTORED: Keep your God Mode locked down!
                         .requestMatchers("/api/admin/**").hasAuthority("ROLE_ADMIN")

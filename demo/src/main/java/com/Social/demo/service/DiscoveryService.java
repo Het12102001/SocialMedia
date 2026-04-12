@@ -10,7 +10,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
+import org.springframework.cache.annotation.Cacheable;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -77,6 +77,7 @@ public class DiscoveryService {
     }
 
     // 3. Timezone-Proof Trending Hashtag Extractor
+    @Cacheable(value = "trendingTags")
     public List<String> getTrendingTags() {
         // Grab the 50 most recent posts, regardless of time/timezone
         Pageable latest50 = PageRequest.of(0, 50, Sort.by(Sort.Direction.DESC, "createdAt"));

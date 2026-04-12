@@ -23,14 +23,26 @@ services:
       - "8080:8080"
     depends_on:
       - db
+      - redis  # 🚀 ADDED: Tells Docker to wait for Redis to boot up first
     restart: on-failure
     environment:
       SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/social_media
       SPRING_DATASOURCE_USERNAME: postgres
       SPRING_DATASOURCE_PASSWORD: Het@1210
+      SPRING_DATA_REDIS_HOST: redis  # 🚀 ADDED: Tells Spring Boot where Redis lives
+      SPRING_DATA_REDIS_PORT: 6379   # 🚀 ADDED: The port Redis is listening on
+#      EMINI_API_KEY: AIzaSyC1yLKoc0xNw4KVs_B5U4XNqnI_Hfmxx8Y
     volumes:
       # 🚀 THE IMAGE FIX: This saves your uploaded images to your Windows folder
       - ./uploads:/app/uploads
+
+  # 🚀 The Cache
+  redis:
+    image: redis:latest
+    container_name: social_redis
+    ports:
+      - "6379:6379"
+    restart: always
 
 # We have to declare the named volume at the bottom
 volumes:

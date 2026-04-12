@@ -7,6 +7,7 @@ import com.Social.demo.repository.PostLikeRepository;
 import com.Social.demo.repository.PostRepository;
 import com.Social.demo.repository.UserRepository;
 import jakarta.transaction.Transactional;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.data.domain.*;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -25,14 +26,18 @@ public class PostService {
     private final UserRepository userRepository;
     private final PostLikeRepository postLikeRepository;
     private final String uploadDir = "uploads/";
+    private final ModerationService moderationService;
 
-    public PostService(PostRepository postRepository, UserRepository userRepository, PostLikeRepository postLikeRepository) {
+    public PostService(PostRepository postRepository, UserRepository userRepository,
+                       PostLikeRepository postLikeRepository,ModerationService moderationService) {
         this.postRepository = postRepository;
         this.userRepository = userRepository;
         this.postLikeRepository = postLikeRepository;
+        this.moderationService = moderationService;
     }
 
     // 🚀 THE FIX: Handles File deletion + DB deletion
+    @CacheEvict(value = "trendingTags", allEntries = true)
     @Transactional
     public void deletePost(Long postId) {
         Post post = postRepository.findById(postId)
@@ -48,7 +53,12 @@ public class PostService {
         postRepository.delete(post);
     }
 
+    @CacheEvict(value = "trendingTags", allEntries = true)
     public Post createPostWithFile(String content, MultipartFile file) throws IOException {
+
+        if (moderationService.isContentToxic(content)) {
+            throw new RuntimeException("CONTENT_TOXIC");
+        }
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
         User user = userRepository.findByEmail(email).orElseThrow(() -> new RuntimeException("User not found"));
 
