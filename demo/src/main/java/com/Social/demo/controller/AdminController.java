@@ -21,7 +21,7 @@ public class AdminController {
         this.commentRepository = commentRepository;
     }
 
-    // 🛡️ ADMIN STATS: Get total count of users in the system
+    // 🛡ADMIN STATS: Get total count of users in the system
     @GetMapping("/stats")
     public ResponseEntity<Map<String, Long>> getStats() {
         Map<String, Long> stats = new HashMap<>();
@@ -29,7 +29,7 @@ public class AdminController {
         return ResponseEntity.ok(stats);
     }
 
-    // 🛡️ GOD MODE: Delete ANY user profile (Purges everything)
+    // 🛡 GOD MODE: Delete ANY user profile (Purges everything)
     @DeleteMapping("/users/{userId}")
     public ResponseEntity<String> deleteUser(@PathVariable Long userId) {
         userService.adminDeleteUser(userId);

@@ -133,4 +133,20 @@ public class UserService {
             return m;
         }).toList();
     }
+
+    @Transactional
+    public List<Map<String, Object>> getChatEligibleFriends() {
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        User currentUser = userRepository.findByEmail(email).orElseThrow();
+
+        List<User> mutuals = followRepository.findMutualFollowers(currentUser.getId());
+
+        return mutuals.stream().map(u -> {
+            Map<String, Object> map = new HashMap<>();
+            map.put("id", u.getId());
+            map.put("username", u.getUsername());
+            map.put("profileImageUrl", u.getProfileImageUrl());
+            return map;
+        }).toList();
+    }
 }

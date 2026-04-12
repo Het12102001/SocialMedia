@@ -15,10 +15,10 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 @EnableWebSecurity
 public class SecurityConfig {
 
-    private final JwtFilter jwtFilter; //  Inject the filter
-    private  final RateLimitingFilter rateLimitingFilter;
+    private final JwtFilter jwtFilter;
+    private final RateLimitingFilter rateLimitingFilter;
 
-    public SecurityConfig(JwtFilter jwtFilter,RateLimitingFilter rateLimitingFilter) {
+    public SecurityConfig(JwtFilter jwtFilter, RateLimitingFilter rateLimitingFilter) {
         this.jwtFilter = jwtFilter;
         this.rateLimitingFilter = rateLimitingFilter;
     }
@@ -33,16 +33,14 @@ public class SecurityConfig {
         http
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
-                        // UPGRADED: Added forgot/reset password to permitAll
-                        .requestMatchers("/uploads/**","/api/users/signup", "/api/users/login", "/api/users/forgot-password", "/api/users/reset-password","/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
+                        // 🚀 UPGRADED: Added "/ws/**" so WebSockets can connect without getting blocked!
+                        .requestMatchers("/uploads/**","/api/users/signup", "/api/users/login", "/api/users/forgot-password", "/api/users/reset-password","/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html", "/ws/**").permitAll()
 
                         // RESTORED: Keep your God Mode locked down!
                         .requestMatchers("/api/admin/**").hasAuthority("ROLE_ADMIN")
 
-                        .anyRequest().authenticated() // Everything else is locked
+                        .anyRequest().authenticated()
                 )
-                // Add our custom filter BEFORE the standard security checks
-
                 .addFilterBefore(rateLimitingFilter, UsernamePasswordAuthenticationFilter.class)
                 .addFilterAfter(jwtFilter, RateLimitingFilter.class);
 
