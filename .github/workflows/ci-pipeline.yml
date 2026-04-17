@@ -21,12 +21,11 @@ jobs:
           distribution: 'temurin'
           cache: maven
 
-      # 🚀 THE FIX: Tell Maven to run inside the 'demo' folder
       - name: 🔨 Build Backend with Maven
         working-directory: ./demo
         run: mvn clean package -DskipTests
 
-      # 🚀 THE FIX: Tell Docker to run inside the 'demo' folder
+      # 🚀 THE FIX: Removed the hyphen! It's now "docker compose"
       - name: 🐳 Test Docker Compose Build
         working-directory: ./demo
-        run: docker-compose build
+        run: docker compose build
