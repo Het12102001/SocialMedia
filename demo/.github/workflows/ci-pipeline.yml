@@ -28,6 +28,6 @@ jobs:
       - name: 🔨 Build Backend with Maven
         run: mvn clean package -DskipTests
 
-      # Step 4: Test the Docker Compose build
+      # Step 4:  Test the Docker Compose build
       - name: 🐳 Test Docker Compose Build
         run: docker-compose build
