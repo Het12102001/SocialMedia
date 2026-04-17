@@ -6,13 +6,13 @@ services:
     image: postgres:15
     container_name: social-media-db
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: Het@1210
-      POSTGRES_DB: social_media
+      # Grabbing from .env
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
     ports:
       - "5433:5432"
     volumes:
-      # 🚀 THE DB FIX: This saves your database data permanently so it survives a 'down' command!
       - postgres_data:/var/lib/postgresql/data
 
   # ☕ The Spring Boot App
@@ -23,17 +23,20 @@ services:
       - "8080:8080"
     depends_on:
       - db
-      - redis  # 🚀 ADDED: Tells Docker to wait for Redis to boot up first
+      - redis
     restart: on-failure
     environment:
-      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/social_media
-      SPRING_DATASOURCE_USERNAME: postgres
-      SPRING_DATASOURCE_PASSWORD: Het@1210
-      SPRING_DATA_REDIS_HOST: redis  # 🚀 ADDED: Tells Spring Boot where Redis lives
-      SPRING_DATA_REDIS_PORT: 6379   # 🚀 ADDED: The port Redis is listening on
-#      EMINI_API_KEY: AIzaSyC1yLKoc0xNw4KVs_B5U4XNqnI_Hfmxx8Y
+      # Injecting .env variables into the Java container
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/${DB_NAME}
+      SPRING_DATASOURCE_USERNAME: ${DB_USER}
+      SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD}
+      SPRING_DATA_REDIS_HOST: redis
+      SPRING_DATA_REDIS_PORT: 6379
+      GEMINI_API_KEY: ${GEMINI_API_KEY}
+      JWT_SECRET: ${JWT_SECRET}
+      MAIL_USER: ${MAIL_USER}
+      MAIL_PASSWORD: ${MAIL_PASSWORD}
     volumes:
-      # 🚀 THE IMAGE FIX: This saves your uploaded images to your Windows folder
       - ./uploads:/app/uploads
 
   # 🚀 The Cache
@@ -44,6 +47,5 @@ services:
       - "6379:6379"
     restart: always
 
-# We have to declare the named volume at the bottom
 volumes:
   postgres_data:
