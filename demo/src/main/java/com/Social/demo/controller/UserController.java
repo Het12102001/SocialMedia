@@ -7,13 +7,16 @@ import com.Social.demo.entity.User;
 import com.Social.demo.repository.PasswordResetTokenRepository;
 import com.Social.demo.repository.UserRepository;
 import com.Social.demo.security.JwtUtil;
+import com.Social.demo.service.EmailService;
 import com.Social.demo.service.FollowService;
 import com.Social.demo.service.UserService;
 import jakarta.transaction.Transactional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
@@ -35,16 +38,17 @@ public class UserController {
     private final UserRepository userRepository;
     private final PasswordResetTokenRepository tokenRepository;
     private final PasswordEncoder passwordEncoder;
-
+    private final EmailService emailService;
     public UserController(UserService userService, JwtUtil jwtUtil, FollowService followService,
                           UserRepository userRepository, PasswordResetTokenRepository tokenRepository,
-                          PasswordEncoder passwordEncoder) {
+                          PasswordEncoder passwordEncoder,EmailService emailService) {
         this.userService = userService;
         this.jwtUtil = jwtUtil;
         this.followService = followService;
         this.userRepository = userRepository;
         this.tokenRepository = tokenRepository;
         this.passwordEncoder = passwordEncoder;
+        this.emailService = emailService;
     }
 
     // 1. SIGNUP
@@ -94,34 +98,29 @@ public class UserController {
     }
 
 
-    // 6. FORGOT PASSWORD (Request Reset)
     @PostMapping("/forgot-password")
     @Transactional
     public ResponseEntity<String> forgotPassword(@RequestParam String email) {
-        logger.info("Received password reset request for: {}", email);
-
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("If this email exists, a reset link has been sent."));
+                .orElseThrow(() -> new RuntimeException("Email not found"));
 
         // Clean up old tokens first
         tokenRepository.deleteByUser(user);
-        tokenRepository.flush(); // Force the delete before the new insert
+        tokenRepository.flush();
 
         // Create new token
         String token = UUID.randomUUID().toString();
         PasswordResetToken resetToken = new PasswordResetToken(token, user);
         tokenRepository.save(resetToken);
 
-        // LOG THE TOKEN (This is what you copy from Docker logs)
-        logger.info("*************************************************");
-        logger.info("EMAIL SIMULATION - PASSWORD RESET");
-        logger.info("To: {}", user.getEmail());
-        logger.info("Your password reset token is: {}", token);
-        logger.info("This token expires in 15 minutes.");
-        logger.info("*************************************************");
+        // 🚀 THE FIX: Use emailService, NOT mailSender
+        emailService.sendResetEmail(user.getEmail(), token);
 
-        return ResponseEntity.ok("If this email exists in our system, a password reset token has been sent.");
+        return ResponseEntity.ok("Reset link sent to your email.");
     }
+
+
+
 
     // 7. RESET PASSWORD (Execute Reset)
     @PostMapping("/reset-password")

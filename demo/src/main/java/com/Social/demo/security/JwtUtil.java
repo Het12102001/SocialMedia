@@ -4,6 +4,7 @@ import io.jsonwebtoken.Claims; // 🔥 Added this import
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import java.security.Key;
@@ -12,10 +13,8 @@ import java.util.Date;
 @Component
 public class JwtUtil {
 
-    // This is the secret signature for your app. It must be long!
-    // In a real company, this is hidden in application.properties, but we'll hardcode it for now.
-    private final String SECRET = "mySuperSecretKeyForSocialMediaAppWhichNeedsToBeVeryLong";
-
+    @Value("${jwt.secret}")
+    private String SECRET;
     // Token lasts for 1 day (in milliseconds)
     private final long EXPIRATION_TIME = 86400000;
 
