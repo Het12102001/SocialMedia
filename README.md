@@ -1,61 +1,47 @@
-# SocialEngine: Enterprise-Grade Social Media Backend
+# 🚀 Social Media Platform - Backend API
 
-**SocialEngine** is a high-performance, secure, and scalable RESTful API built with **Spring Boot 3**. This project demonstrates a deep understanding of complex database relationships, stateless security architectures, and industrial-standard logging and documentation.
+A secure, scalable, and fully containerized REST API for a modern social media platform. Built with a focus on "Zero-Hardcode" security, automated CI/CD, and robust multi-container orchestration.
 
----
+## 🛠️ Tech Stack
 
-## Interactive API Documentation (Swagger)
-This project is fully documented using **OpenAPI 3.0**. You can explore, test, and interact with all endpoints directly through the Swagger UI once the application is running.
+* **Core:** Java 21, Spring Boot 3
+* **Database:** PostgreSQL 15
+* **Cache:** Redis
+* **Security:** JWT (JSON Web Tokens), OTP, Magic Links
+* **AI Integration:** Google Gemini Pro API
+* **Email:** Mailtrap (SMTP)
+* **DevOps:** Docker, Docker Compose, GitHub Actions
+* **Hosting:** Render (Cloud Native PaaS)
 
-* **Swagger UI:** `http://localhost:8080/swagger-ui.html`
-* **API Docs:** `http://localhost:8080/v3/api-docs`
+## ✨ Key Features
 
----
-
-##  Killer Features & Functionality
-
-###  Advanced Security Suite
-* **JWT Stateless Auth:** Implemented custom `JwtFilter` for secure, scalable session management.
-* **Rate Limiting:** Integrated **Bucket4j** to protect against brute-force attacks on sensitive endpoints (Login/Forgot Password).
-* **BCrypt Encryption:** Industry-standard password hashing to ensure user data remains secure even in a leak.
-* **Bulletproof Recovery:** A multi-step password reset system using UUID tokens with automated old-token cleanup.
-
-### Sophisticated Data Engine
-* **Personalized Feed:** Optimized SQL Join queries that filter posts based on a user's unique "Social Graph" (following list).
-* **Trending Hashtags:** A high-performance **Native SQL Algorithm** that extracts and ranks hashtags from post content in real-time.
-* **Atomic Social Actions:** Follow/Unfollow and Like/Unlike logic with built-in validation (e.g., users cannot follow themselves).
-* **Nested Content:** Support for posts with multi-media URLs and full threading for user comments.
-
-### Administrative "God Mode"
-* **RBAC (Role-Based Access Control):** Granular permission system where only users with `ROLE_ADMIN` can perform global deletions of posts, comments, or user accounts.
+* **Advanced Authentication:** Secure login using OTP and Magic Links (Phase 3).
+* **Zero-Hardcode Security:** Strict environment variable injection. App fails securely if credentials are missing.
+* **Continuous Integration:** Automated GitHub Actions pipeline that compiles Java, runs tests, and verifies Docker builds on every push to `master`.
+* **Containerized Infrastructure:** One-click local deployment using Docker Compose for the App, Postgres, and Redis.
+* **AI-Powered:** Integrated with Google's Gemini AI model.
 
 ---
 
-## 🛠️ Tech Stack & Infrastructure
+## 💻 Local Development Setup
 
-| Layer | Technology |
-| :--- | :--- |
-| **Framework** | Spring Boot 3.4.x |
-| **Security** | Spring Security 6 (JWT, Rate Limiting) |
-| **Database** | PostgreSQL 15 |
-| **ORM** | Spring Data JPA (Hibernate) |
-| **Docs** | Swagger UI / SpringDoc OpenAPI |
-| **DevOps** | Docker, Docker Compose |
-| **Tooling** | Lombok, SLF4J (Logging), Maven |
+### Prerequisites
+* Java 21 (JDK)
+* Docker & Docker Desktop
 
----
+### 1. Environment Configuration
+Create a `.env` file in the root directory (next to `docker-compose.yml`). **Do not commit this file to version control.**
 
-## 🚀 Deployment Guide
+```env
+# 🐘 Database Secrets
+DB_USER=postgres
+DB_PASSWORD=your_secure_password
+DB_NAME=social_media
 
-### 1. Prerequisites
-* Docker & Docker Compose installed.
+# 🤖 AI & Security Secrets
+GEMINI_API_KEY=your_gemini_api_key
+JWT_SECRET=your_super_secret_jwt_key
 
-### 2. Launching the System
-```bash
-# Clone the repo
-git clone [https://github.com/your-username/SocialEngine.git](https://github.com/your-username/SocialEngine.git)
-
-# Spin up the Database and Application containers
-docker-compose up -d --build
-
-docker logs -f [app_container_name]
+# 📧 Mailtrap Secrets
+MAIL_USER=your_mailtrap_user
+MAIL_PASSWORD=your_mailtrap_password
