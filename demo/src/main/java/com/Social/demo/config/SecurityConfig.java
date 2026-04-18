@@ -4,6 +4,7 @@ import com.Social.demo.security.JwtFilter;
 import com.Social.demo.security.RateLimitingFilter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.config.Customizer; // 🚀 IMPORT ADDED
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -31,14 +32,11 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
+                .cors(Customizer.withDefaults()) // 🚀 THE FIX: Tells Security to respect your WebConfig VIP list!
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
-                        // 🚀 UPGRADED: Added "/ws/**" so WebSockets can connect without getting blocked!
                         .requestMatchers("/uploads/**","/api/users/signup", "/api/users/login", "/api/users/forgot-password", "/api/users/reset-password","/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html", "/ws/**","/api/discovery/trending").permitAll()
-
-                        // RESTORED: Keep your God Mode locked down!
                         .requestMatchers("/api/admin/**").hasAuthority("ROLE_ADMIN")
-
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(rateLimitingFilter, UsernamePasswordAuthenticationFilter.class)
