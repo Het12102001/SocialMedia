@@ -6,6 +6,8 @@ import com.Social.demo.entity.PostLike;
 import com.Social.demo.repository.PostLikeRepository;
 import com.Social.demo.repository.PostRepository;
 import com.Social.demo.repository.UserRepository;
+import com.cloudinary.Cloudinary;
+import com.cloudinary.utils.ObjectUtils;
 import jakarta.transaction.Transactional;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.data.domain.*;
@@ -14,9 +16,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
-import java.nio.file.*;
 import java.time.LocalDateTime;
-import java.util.UUID;
+import java.util.Map;
 import java.util.Optional;
 
 @Service
@@ -25,13 +26,14 @@ public class PostService {
     private final PostRepository postRepository;
     private final UserRepository userRepository;
     private final PostLikeRepository postLikeRepository;
-    private final String uploadDir = "uploads/";
+    private final Cloudinary cloudinary;
 
     public PostService(PostRepository postRepository, UserRepository userRepository,
-                       PostLikeRepository postLikeRepository) {
+                       PostLikeRepository postLikeRepository, Cloudinary cloudinary) {
         this.postRepository = postRepository;
         this.userRepository = userRepository;
         this.postLikeRepository = postLikeRepository;
+        this.cloudinary = cloudinary;
     }
 
     // 🚀 THE FIX: Handles File deletion + DB deletion
@@ -43,9 +45,10 @@ public class PostService {
 
         if (post.getImageUrl() != null) {
             try {
-                Files.deleteIfExists(Paths.get("uploads/" + post.getImageUrl()));
-            } catch (IOException e) {
-                System.err.println("Could not delete file: " + post.getImageUrl());
+                String publicId = extractPublicId(post.getImageUrl());
+                cloudinary.uploader().destroy(publicId, ObjectUtils.emptyMap());
+            } catch (Exception e) {
+                System.err.println("Could not delete from Cloudinary: " + e.getMessage());
             }
         }
         postRepository.delete(post);
@@ -63,12 +66,9 @@ public class PostService {
         post.setCreatedAt(LocalDateTime.now());
 
         if (file != null && !file.isEmpty()) {
-            Path uploadPath = Paths.get(uploadDir);
-            if (!Files.exists(uploadPath)) Files.createDirectories(uploadPath);
-
-            String fileName = UUID.randomUUID().toString() + "_" + file.getOriginalFilename();
-            Files.copy(file.getInputStream(), uploadPath.resolve(fileName));
-            post.setImageUrl(fileName);
+            Map uploadResult = cloudinary.uploader().upload(file.getBytes(),
+                    ObjectUtils.asMap("folder", "socialhub/posts", "resource_type", "auto"));
+            post.setImageUrl((String) uploadResult.get("secure_url"));
         }
 
         return postRepository.save(post);
@@ -110,6 +110,20 @@ public class PostService {
 //    // Just fetch EVERY single post in the database.
 //    return postRepository.findAll(pageable);
 //}
+
+    private String extractPublicId(String url) {
+        // e.g. https://res.cloudinary.com/cloud/image/upload/v123/socialhub/posts/abc.jpg
+        // → socialhub/posts/abc
+        int uploadIdx = url.indexOf("/upload/");
+        if (uploadIdx == -1) return url;
+        String afterUpload = url.substring(uploadIdx + 8);
+        // strip version segment (v1234567890/)
+        if (afterUpload.startsWith("v") && afterUpload.indexOf('/') != -1) {
+            afterUpload = afterUpload.substring(afterUpload.indexOf('/') + 1);
+        }
+        int dotIdx = afterUpload.lastIndexOf('.');
+        return dotIdx != -1 ? afterUpload.substring(0, dotIdx) : afterUpload;
+    }
 
     public String toggleLike(Long postId) {
         String email = SecurityContextHolder.getContext().getAuthentication().getName();

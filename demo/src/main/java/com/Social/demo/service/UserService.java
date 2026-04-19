@@ -3,12 +3,13 @@ package com.Social.demo.service;
 import com.Social.demo.entity.User;
 import com.Social.demo.repository.FollowRepository;
 import com.Social.demo.repository.UserRepository;
+import com.cloudinary.Cloudinary;
+import com.cloudinary.utils.ObjectUtils;
 import jakarta.transaction.Transactional;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
-import java.nio.file.*;
 import java.util.*;
 import java.io.IOException;
 
@@ -18,11 +19,14 @@ public class UserService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final FollowRepository followRepository;
+    private final Cloudinary cloudinary;
 
-    public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder, FollowRepository followRepository) {
+    public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder,
+                       FollowRepository followRepository, Cloudinary cloudinary) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.followRepository = followRepository;
+        this.cloudinary = cloudinary;
     }
 
     // 🚀 NEW ADMIN FEATURE: Count all users
@@ -50,12 +54,12 @@ public class UserService {
     // Private helper to handle the file & DB wipe
     private void performFullCleanup(User user) {
         // 1. Cleanup Profile Image
-        if (user.getProfileImageUrl() != null) deletePhysicalFile(user.getProfileImageUrl());
+        if (user.getProfileImageUrl() != null) deleteCloudinaryFile(user.getProfileImageUrl());
 
         // 2. Cleanup all Post Images
         if (user.getPosts() != null) {
             user.getPosts().forEach(post -> {
-                if (post.getImageUrl() != null) deletePhysicalFile(post.getImageUrl());
+                if (post.getImageUrl() != null) deleteCloudinaryFile(post.getImageUrl());
             });
         }
 
@@ -63,12 +67,18 @@ public class UserService {
         userRepository.delete(user);
     }
 
-    private void deletePhysicalFile(String fileName) {
+    private void deleteCloudinaryFile(String url) {
         try {
-            Path path = Paths.get("uploads/" + fileName);
-            Files.deleteIfExists(path);
-        } catch (IOException e) {
-            System.err.println("Could not delete file: " + fileName);
+            int uploadIdx = url.indexOf("/upload/");
+            if (uploadIdx == -1) return;
+            String afterUpload = url.substring(uploadIdx + 8);
+            if (afterUpload.startsWith("v") && afterUpload.indexOf('/') != -1)
+                afterUpload = afterUpload.substring(afterUpload.indexOf('/') + 1);
+            int dotIdx = afterUpload.lastIndexOf('.');
+            String publicId = dotIdx != -1 ? afterUpload.substring(0, dotIdx) : afterUpload;
+            cloudinary.uploader().destroy(publicId, ObjectUtils.emptyMap());
+        } catch (Exception e) {
+            System.err.println("Could not delete from Cloudinary: " + e.getMessage());
         }
     }
 
@@ -101,11 +111,9 @@ public class UserService {
         User user = userRepository.findByEmail(email).orElseThrow(() -> new RuntimeException("User not found"));
         if (bio != null) user.setBio(bio);
         if (file != null && !file.isEmpty()) {
-            Path uploadPath = Paths.get("uploads/");
-            if (!Files.exists(uploadPath)) Files.createDirectories(uploadPath);
-            String fileName = UUID.randomUUID().toString() + "_avatar_" + file.getOriginalFilename();
-            Files.copy(file.getInputStream(), uploadPath.resolve(fileName), StandardCopyOption.REPLACE_EXISTING);
-            user.setProfileImageUrl(fileName);
+            Map uploadResult = cloudinary.uploader().upload(file.getBytes(),
+                    ObjectUtils.asMap("folder", "socialhub/avatars", "resource_type", "image"));
+            user.setProfileImageUrl((String) uploadResult.get("secure_url"));
         }
         return userRepository.save(user);
     }
