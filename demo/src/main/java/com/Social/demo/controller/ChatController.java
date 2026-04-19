@@ -34,9 +34,14 @@ public class ChatController {
         // 1. Save to Database Permanently
         ChatMessage savedMsg = chatService.saveMessage(senderEmail, recipientId, content);
 
-        // 🚀 2. THE FIX: Push directly to the topic using the recipient's username
+        // Push to recipient for real-time delivery
         messagingTemplate.convertAndSend(
                 "/topic/messages/" + savedMsg.getRecipient().getUsername(),
+                savedMsg
+        );
+        // Push to sender so their optimistic message gets replaced with the real saved one
+        messagingTemplate.convertAndSend(
+                "/topic/messages/" + savedMsg.getSender().getUsername(),
                 savedMsg
         );
 

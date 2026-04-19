@@ -26,14 +26,12 @@ public class PostService {
     private final UserRepository userRepository;
     private final PostLikeRepository postLikeRepository;
     private final String uploadDir = "uploads/";
-    private final ModerationService moderationService;
 
     public PostService(PostRepository postRepository, UserRepository userRepository,
-                       PostLikeRepository postLikeRepository,ModerationService moderationService) {
+                       PostLikeRepository postLikeRepository) {
         this.postRepository = postRepository;
         this.userRepository = userRepository;
         this.postLikeRepository = postLikeRepository;
-        this.moderationService = moderationService;
     }
 
     // 🚀 THE FIX: Handles File deletion + DB deletion
@@ -56,9 +54,6 @@ public class PostService {
     @CacheEvict(value = "trendingTags", allEntries = true)
     public Post createPostWithFile(String content, MultipartFile file) throws IOException {
 
-        if (moderationService.isContentToxic(content)) {
-            throw new RuntimeException("CONTENT_TOXIC");
-        }
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
         User user = userRepository.findByEmail(email).orElseThrow(() -> new RuntimeException("User not found"));
 
