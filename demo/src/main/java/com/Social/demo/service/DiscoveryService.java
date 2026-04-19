@@ -79,29 +79,32 @@ public class DiscoveryService {
     // 3. Timezone-Proof Trending Hashtag Extractor
     @Cacheable(value = "trendingTags")
     public List<String> getTrendingTags() {
-        // Grab the 50 most recent posts, regardless of time/timezone
-        Pageable latest50 = PageRequest.of(0, 50, Sort.by(Sort.Direction.DESC, "createdAt"));
-        List<Post> recentPosts = postRepository.findAll(latest50).getContent();
+        try {
+            Pageable latest50 = PageRequest.of(0, 50, Sort.by(Sort.Direction.DESC, "createdAt"));
+            List<Post> recentPosts = postRepository.findAll(latest50).getContent();
 
-        Map<String, Integer> tagCounts = new HashMap<>();
-        Pattern pattern = Pattern.compile("#\\w+"); // Regex to find #hashtags
+            Map<String, Integer> tagCounts = new HashMap<>();
+            Pattern pattern = Pattern.compile("#\\w+");
 
-        for (Post post : recentPosts) {
-            if (post.getContent() != null) {
-                Matcher matcher = pattern.matcher(post.getContent());
-                while (matcher.find()) {
-                    String tag = matcher.group().toLowerCase();
-                    tagCounts.put(tag, tagCounts.getOrDefault(tag, 0) + 1);
+            for (Post post : recentPosts) {
+                if (post.getContent() != null) {
+                    Matcher matcher = pattern.matcher(post.getContent());
+                    while (matcher.find()) {
+                        String tag = matcher.group().toLowerCase();
+                        tagCounts.put(tag, tagCounts.getOrDefault(tag, 0) + 1);
+                    }
                 }
             }
-        }
 
-        // Sort by most popular and return the top 5
-        return tagCounts.entrySet().stream()
-                .sorted((a, b) -> b.getValue().compareTo(a.getValue()))
-                .limit(5)
-                .map(Map.Entry::getKey)
-                .toList();
+            return tagCounts.entrySet().stream()
+                    .sorted((a, b) -> b.getValue().compareTo(a.getValue()))
+                    .limit(5)
+                    .map(Map.Entry::getKey)
+                    .toList();
+        } catch (Exception e) {
+            System.out.println("⚠️ Trending tags error: " + e.getMessage());
+            return new ArrayList<>();
+        }
     }
 
     // 4. Personalized Hashtag Search (Only searches your network)
